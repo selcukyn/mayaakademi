@@ -1,0 +1,43 @@
+backend:
+  name: github
+  repo: selcukyn/mayaakademi
+  branch: main
+  auth:
+    client_id: "Ov23liv8kh7lXC6HIjNY"
+    client_secret: "a82ff562e40a73154ad478609b44b3908ee34280"
+
+publish_mode: editorial_workflow
+
+media_folder: "public/assets/blog"
+public_folder: "/assets/blog"
+
+collections:
+  - name: "blog"
+    label: "Blog"
+    folder: "src/content/blog"
+    create: true
+    fields:
+      - { label: "Description", name: "description", widget: "text", default: "" }
+      - { label: "Draft", name: "draft", widget: "boolean", default: false }
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Snippet", name: "snippet", widget: "string" }
+      - { label: "Image", name: "image", widget: "object", fields: [{ label: "Source", name: "src", widget: "string", default: "" }, { label: "Alt Text", name: "alt", widget: "string", default: "" }] }
+      - { label: "Big Image", name: "bigImg", widget: "object", fields: [{ label: "Source", name: "src", widget: "string", default: "" }, { label: "Alt Text", name: "alt", widget: "string", default: "" }] }
+      - { label: "Author Image", name: "authorImg", widget: "object", fields: [{ label: "Source", name: "src", widget: "string", default: "" }, { label: "Alt Text", name: "alt", widget: "string", default: "" }] }
+      - { label: "Publish Date", name: "publishDate", widget: "datetime" }
+      - { label: "Comments", name: "comments", widget: "string" }
+      - { label: "Views", name: "views", widget: "string" }
+      - { label: "Category", name: "category", widget: "string" }
+      - { label: "Tags", name: "tags", widget: "list", default: [] }
+      - { label: "Body", name: "body", widget: "markdown" }
+      - { label: "Author", name: "author", widget: "string" }
+      - { label: "Post Details", name: "postDetails", widget: "object", fields: [
+        { label: "Para One", name: "paraOne", widget: "text" },
+        { label: "Para Two", name: "paraTwo", widget: "text" },
+        { label: "Title", name: "title", widget: "string" },
+        { label: "Para Three", name: "paraThree", widget: "text" },
+        { label: "Title Two", name: "titleTwo", widget: "string" },
+        { label: "Para Four", name: "paraFour", widget: "text" },
+        { label: "Para Five", name: "paraFive", widget: "text" },
+      ]}
+      - { label: "Quotes", name: "quotes", widget: "object", fields: [{ label: "Quote", name: "quote", widget: "text" }, { label: "Author", name: "author", widget: "string" }] }

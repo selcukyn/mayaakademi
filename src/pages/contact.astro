@@ -1,0 +1,15 @@
+---
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import Layout from '../layouts/Layout.astro';
+import Contactsection from '../components/Contactsection.astro';
+---
+
+<Layout
+  description="Bizimle İşetişime Geçin"
+  title="İletişim | Maya Akademi"
+>
+  <Breadcrumb>
+    <Fragment slot="title">İletişim</Fragment>
+  </Breadcrumb>
+  <Contactsection />
+</Layout>

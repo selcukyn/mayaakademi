@@ -1,0 +1,17 @@
+---
+import Team from '../components/Team.astro';
+import Aboutsection from '../components/Aboutsection.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import Layout from '../layouts/Layout.astro';
+import CTAsection from '../components/CTAsection.astro';
+---
+
+<Layout
+  description="Maya Akademi Hakkımızda Sayfası."
+  title="Hakkımızda | Maya Akademi"
+>
+  <Breadcrumb>
+    <Fragment slot="title">Hakkımızda</Fragment>
+  </Breadcrumb>
+  <Aboutsection />
+</Layout>
