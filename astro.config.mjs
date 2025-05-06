@@ -3,6 +3,7 @@ import tailwind from "@astrojs/tailwind";
 import compress from "astro-compress";
 import sitemap from "@astrojs/sitemap";
 import sanity from '@sanity/astro'; // <-- DOĞRU İMPORT
+import react from "@astrojs/react";
 
 
 const sanityProjectId = 'ydyiledi'; // Gerçek Sanity Proje ID'niz
@@ -21,7 +22,8 @@ export default defineConfig({
                       // Geliştirme için false bırakabilirsiniz: import.meta.env.PROD
       apiVersion: '2023-05-03', // Veya daha güncel bir Sanity API versiyonu (örn: 'v2024-03-14')
       // studioBasePath: '/studio', // Eğer Astro projeniz içinde Sanity Studio'yu da serve ediyorsanız (şu an ayrı bir projeniz var, bu satır gereksiz)
-    })
+    }),
+    react()
   ],
   // ...varsa diğer ayarlarınız
 });

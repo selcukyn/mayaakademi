@@ -1,68 +1,129 @@
 ---
-import Pagination from '../components/Pagination.astro';
+// src/pages/blog.astro
+// import Pagination from '../components/Pagination.astro'; // Pagination'ı daha sonra güncelleyeceğiz
 import Breadcrumb from '../components/layout/Breadcrumb.astro';
 import Layout from '../layouts/Layout.astro';
-import { getCollection } from "astro:content";
 
-// Filter blog entries with 'draft: false' & date before current date
-const publishedBlogEntries = await getCollection("blog", ({ data }) => {
-  return !data.draft && data.publishDate < new Date();
-});
+import { client as sanityClient } from '../lib/sanityClient'; // Sanity client
+import { urlFor } from '../lib/sanityImageUrl'; // Sanity görsel yardımcısı
+import { Image } from "astro:assets"; // Astro Image bileşeni
+// import config from "../../config/config.json"; // <-- BU SATIRI TAMAMEN KALDIRIYORUZ
 
-// Sort content entries by publication date
-publishedBlogEntries.sort(function (a, b) {
-  return b.data.publishDate.valueOf() - a.data.publishDate.valueOf();
-});
+const postsPerPage = 6; // Sayfa başına gösterilecek yazı sayısını burada sabit olarak tanımlıyoruz.
+                        // İsterseniz bu değeri değiştirebilirsiniz.
+
+// URL'den mevcut sayfa numarasını al (query parameter: ?page=X)
+const currentPageFromQuery = Astro.url.searchParams.get('page');
+const currentPage = parseInt(currentPageFromQuery || "1");
+
+const startIndex = (currentPage - 1) * postsPerPage;
+const endIndex = startIndex + postsPerPage;
+
+// Sanity'den mevcut sayfa için yazıları çek
+const postsQuery = `*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) [$startIndex...$endIndex]{
+  _id,
+  title,
+  "slug": slug.current,
+  mainImage,
+  publishedAt,
+  excerpt
+}`;
+
+const postsFromSanity = await sanityClient.fetch(postsQuery, { startIndex, endIndex });
+
+// Toplam yazı sayısını al (sayfalama için)
+const totalPostsQuery = `count(*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))])`;
+const totalPostsCount = await sanityClient.fetch(totalPostsQuery);
+const totalPages = Math.ceil(totalPostsCount / postsPerPage);
+
+// Sayfa başlığı için
+const pageTitleBase = "Blog";
+const pageTitle = currentPage > 1 ? `${pageTitleBase} - Sayfa ${currentPage}` : pageTitleBase;
+const metaTitle = `Maya Akademi | ${pageTitle}`;
+const metaDescription = `Bu sayfada Maya Akademi blog yazılarına ulaşabilirsiniz${currentPage > 1 ? `, sayfa ${currentPage}` : ''}.`;
 ---
 
 <Layout
-  description="Bu sayfada blog yazılarımıza ulaşabilirsiniz."
-  title="Maya Akademi | Blog"
+  description={metaDescription}
+  title={metaTitle}
 >
   <Breadcrumb>
     <Fragment slot="title">Blog</Fragment>
   </Breadcrumb>
   <section class="pt-20 pb-10 lg:pt-[120px] lg:pb-20 dark:bg-dark">
     <div class="container">
-      <ul class="-mx-4 flex flex-wrap">
-        {
-          publishedBlogEntries.map((blogPostEntry, index) => (
-            <li class="w-full px-4 md:w-1/2 lg:w-1/3">
-              <a class="wow fadeInUp group block mb-10" data-wow-delay=".1s" href={`/blog/${blogPostEntry.slug}`}>
-                <div class="mb-8 overflow-hidden rounded-[5px]">
-                  <span class="block">
-                    <img
-                      src={blogPostEntry.data.image.src}
-                      alt={blogPostEntry.data.image.alt}
-                      class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125"
-                    />
-                  </span>
-                </div>
-                <div>
-                  <span
-                    class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary"
-                  >
-                {blogPostEntry.data.publishDate.toLocaleDateString("tr-TR")}&nbsp
-                {blogPostEntry.data.publishDate.toLocaleDateString("tr-TR", { weekday: 'long' })}
-                  </span>
-                  <h3>
-                    <span
-                      class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl"
-                    >
-                      {blogPostEntry.data.title}
-                    </span>
-                  </h3>
-                  <p class="max-w-[370px] text-base text-body-color dark:text-dark-6">
-                    {blogPostEntry.data.postDetails.paraOne.slice(0, 100)}
-                  </p>
-                </div>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+      <div class="mb-12 text-center">
+        <p class="mb-2 text-lg font-semibold text-primary dark:text-primary-dark">
+          Blog Yazılarımız
+        </p>
+        <h1 class="h2 text-dark dark:text-white">
+          En Son Haberler ve İçgörüler
+        </h1>
+      </div>
+      {postsFromSanity.length > 0 ? (
+        <ul class="-mx-4 flex flex-wrap">
+          {
+            postsFromSanity.map((post) => {
+              let imageUrl: string | null = null;
+              let imageAlt: string = post.title || "Blog görseli";
+              if (post.mainImage && post.mainImage.asset) {
+                imageUrl = urlFor(post.mainImage)?.width(700).height(450).auto('format').url() || null;
+                if (post.mainImage.alt) {
+                  imageAlt = post.mainImage.alt;
+                }
+              }
 
-      <Pagination />
+              return (
+                <li class="w-full px-4 md:w-1/2 lg:w-1/3">
+                  <a class="wow fadeInUp group block mb-10" data-wow-delay=".1s" href={`/blog/${post.slug}`}>
+                    <div class="mb-8 overflow-hidden rounded-[5px]">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={imageAlt}
+                          width={700}
+                          height={450}
+                          format="webp"
+                          quality={80}
+                          class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div class="w-full h-[200px] bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-[5px]">
+                          <span class="text-gray-500">Görsel Yok</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span
+                        class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary"
+                      >
+                        {new Date(post.publishedAt).toLocaleDateString("tr-TR", {day: '2-digit', month: 'long', year: 'numeric'})}
+                      </span>
+                      <h3>
+                        <span
+                          class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl"
+                        >
+                          {post.title}
+                        </span>
+                      </h3>
+                      {post.excerpt && (
+                        <p class="max-w-[370px] text-base text-body-color dark:text-dark-6">
+                          {post.excerpt.slice(0, 120)}{post.excerpt.length > 120 ? '...' : ''}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                </li>
+              );
+            })
+          }
+        </ul>
+      ) : (
+        currentPage === 1 && <p class="mt-10 text-center text-lg text-gray-600 dark:text-gray-400">Henüz hiç yazı yayınlanmamış.</p>
+      )}
+
+      {/* <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" /> */}
     </div>
   </section>
 </Layout>
