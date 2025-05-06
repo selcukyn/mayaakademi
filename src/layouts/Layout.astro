@@ -1,42 +1,104 @@
 ---
-import Footer from '../components/layout/Footer.astro';
-import Header from '../components/layout/Header.astro';
-import BackToTop from '../components/layout/BackToTop.astro';
+// src/layouts/Layout.astro
+import Header from "../components/layout/Header.astro";
+import Footer from "../components/layout/Footer.astro";
+import BackToTop from "../components/layout/BackToTop.astro";
+import { ViewTransitions } from "astro:transitions";
 
-interface Props {
-  description: string;
-  title: string;
+// Doğrudan astro.config.mjs'den siteMetadata'yı almak mümkün değil.
+// Site URL'ini Astro.site üzerinden alacağız.
+// Diğer meta bilgileri için prop'lardan veya varsayılanlardan gideceğiz.
+
+export interface Props {
+  title?: string;
+  description?: string;
   image?: string;
+  type?: string;
 }
 
-const { description, title, image } = Astro.props;
+// Varsayılan değerler (bunları doğrudan burada tanımlayabilir veya
+// her sayfadan prop olarak gelmesini bekleyebiliriz)
+const defaultSiteTitle = "Maya Akademi"; // Bu, astro.config.mjs'deki siteMetadata.title ile aynı olmalı
+const defaultSiteDescription = "Teknoloji, eğitim ve daha fazlası üzerine yazılar ve kaynaklar."; // Bu da siteMetadata.description ile aynı olmalı
+const defaultOgImage = "/default-og-image.png"; // public klasöründeki varsayılan görsel
+
+const {
+  title: pageSpecificTitle, // Prop'tan gelen sayfaya özel başlık
+  description: pageSpecificDescription, // Prop'tan gelen sayfaya özel açıklama
+  image: pageSpecificImage, // Prop'tan gelen sayfaya özel görsel
+  type: pageOgType = "website", // Prop'tan gelen OG tipi, varsayılanı "website"
+} = Astro.props;
+
+// Nihai başlık ve açıklamayı oluştur
+const finalTitle = pageSpecificTitle ? `${pageSpecificTitle} | ${defaultSiteTitle}` : defaultSiteTitle;
+const finalDescription = pageSpecificDescription || defaultSiteDescription;
+
+// Site URL'ini astro.config.mjs'deki 'site' alanından alıyoruz
+const siteURL = Astro.site ? Astro.site.toString().replace(/\/$/, "") : "https://www.mayaakademi.com.tr"; // Sonundaki slash'ı kaldır
+
+// OG görseli için tam URL
+const ogImageURL = pageSpecificImage
+  ? new URL(pageSpecificImage, siteURL).href
+  : new URL(defaultOgImage, siteURL).href;
+
+// Mevcut sayfanın tam URL'i
+const currentURL = new URL(Astro.url.pathname, siteURL).href;
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr" class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <ViewTransitions />
+
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="public/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="public/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
+
+    <title>{finalTitle}</title>
     <meta name="generator" content={Astro.generator} />
-    <meta name="description" content={description} />
-    <meta property="og:image" content={image} />
-    <meta property="twitter:image" content={image} />
-    <title>{title}</title>
+    <meta name="description" content={finalDescription} />
+
+    <meta property="og:url" content={currentURL} />
+    <meta property="og:type" content={pageOgType} />
+    <meta property="og:title" content={finalTitle} />
+    <meta property="og:description" content={finalDescription} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:site_name" content={defaultSiteTitle} />
+    <meta property="og:locale" content="tr_TR" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={currentURL} />
+    <meta name="twitter:title" content={finalTitle} />
+    <meta name="twitter:description" content={finalDescription} />
+    <meta name="twitter:image" content={ogImageURL} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <script defer is:inline src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
   </head>
-  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
-  <body>
+  <body class="bg-white dark:bg-dark">
     <Header />
-    <!-- <Header client:load /> -->
     <main>
       <slot />
     </main>
     <Footer />
     <BackToTop />
     <style is:global>
+      /* Stil içeriği aynı kalacak */
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
       body {
         font-family: "Inter", sans-serif;
@@ -46,36 +108,6 @@ const { description, title, image } = Astro.props;
         backdrop-filter: blur(5px);
         box-shadow: inset 0 -1px 0 0 rgba(0, 0, 0, 0.1);
       }
-
-      .sticky-header .navbar-logo {
-        @apply py-2;
-      }
-
-      .sticky-header #navbarToggler span {
-        @apply bg-dark dark:bg-white;
-      }
-
-      .sticky-header #navbarCollapse li > a {
-        @apply text-dark dark:text-white hover:text-primary dark:hover:text-primary hover:opacity-100;
-      }
-      #navbarCollapse li .ud-menu-scroll.active {
-        @apply opacity-70;
-      }
-      .sticky-header #navbarCollapse li .ud-menu-scroll.active {
-        @apply text-primary opacity-100;
-      }
-      .sticky-header .loginBtn {
-        @apply text-dark dark:text-white hover:text-primary dark:hover:text-primary hover:opacity-100;
-      }
-
-      .sticky-header .signUpBtn {
-        @apply bg-primary text-white hover:bg-blue-dark hover:text-white;
-      }
-
-      .sticky-header #themeSwitcher span {
-        @apply text-dark dark:text-white;
-      }
-
       .navbarTogglerActive > span:nth-child(1) {
         @apply top-[7px] rotate-45 transform;
       }
@@ -100,12 +132,11 @@ const { description, title, image } = Astro.props;
       .common-carousel .swiper-button-prev svg {
         @apply w-auto h-auto;
       }
-
     </style>
     <script>
       import "../scripts/stickymenu.js";
       import "../scripts/dropdown.js";
-      import "../scripts/darkMode.js";
+      // import "../scripts/darkMode.js"; // YORUMLU KALSIN
       import "../scripts/scrolltop.js";
       import "../scripts/scrollmenu.js";
       import "../scripts/testimonial.js";

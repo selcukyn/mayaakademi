@@ -12,6 +12,13 @@ const sanityDataset = 'production'; // Genellikle 'production', Sanity projenizd
 
 export default defineConfig({
   site: "https://mayaakademi.com.tr/", // Sitenizin URL'si
+
+  siteMetadata: {
+    title: 'Maya Akademi',
+    description: 'Teknoloji, eğitim ve daha fazlası üzerine yazılar ve kaynaklar.',
+    ogImage: '/android-chrome-192x192.png', // public klasöründe varsayılan bir OG görseli
+    // Diğer meta bilgiler (örn: twitterHandle: '@MayaAkademi')
+  },
   integrations: [
     tailwind(),
     sitemap(),

@@ -1,6 +1,8 @@
 {
-  "extends": "astro/tsconfigs/strict",
+  "extends": "astro/tsconfigs/strict", // veya base, stricts
   "compilerOptions": {
-    "allowJs": true,
+    "esModuleInterop": true, // <-- BU SATIRI EKLEYİN
+    "allowJs": true
+    // Diğer ayarlarınız olabilir
   }
 }
