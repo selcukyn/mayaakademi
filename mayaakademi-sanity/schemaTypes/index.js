@@ -1,11 +1,18 @@
-// mayaakademi-sanity/schemas/index.js
-import post from './post'
-// Eğer author ve category gibi schemalarınız varsa onları da import edin
-// import author from './author'
-// import category from './category'
+// sanity/schemas/schema.js (veya index.js)
+import createSchema from 'part:@sanity/base/schema-creator'
+import schemaTypes from 'all:part:@sanity/base/schema-type'
 
-export const schemaTypes = [
+// Oluşturduğumuz şemaları import ediyoruz
+import blockContent from './blockContent'
+import post from './post'
+// Eğer başka şemalarınız varsa (örn: author, category) onları da buraya ekleyin
+
+export default createSchema({
+  name: 'default',
+  // Şemaları schemaTypes ile birleştiriyoruz
+  types: schemaTypes.concat([
     post,
-    // author,
-    // category,
-]
+    blockContent,
+    // ...diğer şemalarınız
+  ]),
+})
