@@ -15,7 +15,7 @@ export default defineConfig({
   site: "https://mayaakademi.vercel.app", // Sitenizin URL'si
   output: "server",
   adapter: vercel(), 
-
+  base: "/",
   siteMetadata: {
     title: 'Maya Akademi',
     description: 'Teknoloji, eğitim ve daha fazlası üzerine yazılar ve kaynaklar.',
