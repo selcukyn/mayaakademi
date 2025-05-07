@@ -12,7 +12,7 @@ const sanityDataset = 'production'; // Genellikle 'production', Sanity projenizd
 
 
 export default defineConfig({
-  site: "https://mayaakademi.com.tr/", // Sitenizin URL'si
+  site: "https://mayaakademi.vercel.app", // Sitenizin URL'si
   output: "server",
   adapter: vercel(), 
 

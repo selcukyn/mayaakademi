@@ -7,6 +7,10 @@
     {
       "source": "/admin/:match*",
       "destination": "https://mayaakademi-admin.vercel.app/:match*"
+    },
+    {
+      "source": "/site.webmanifest",
+      "destination": "/admin/site.webmanifest"
     }
   ]
 }
