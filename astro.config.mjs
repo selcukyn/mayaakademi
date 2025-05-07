@@ -4,6 +4,7 @@ import compress from "astro-compress";
 import sitemap from "@astrojs/sitemap";
 import sanity from '@sanity/astro'; // <-- DOĞRU İMPORT
 import react from "@astrojs/react";
+import vercel from "@astrojs/vercel"; // <-- VERCEL ADAPTÖRÜNÜ IMPORT ET
 
 
 const sanityProjectId = 'ydyiledi'; // Gerçek Sanity Proje ID'niz
@@ -12,6 +13,8 @@ const sanityDataset = 'production'; // Genellikle 'production', Sanity projenizd
 
 export default defineConfig({
   site: "https://mayaakademi.com.tr/", // Sitenizin URL'si
+  output: "hybrid",
+  adapter: vercel(), 
 
   siteMetadata: {
     title: 'Maya Akademi',
@@ -25,7 +28,7 @@ export default defineConfig({
     sanity({ // <-- Sanity entegrasyonu
       projectId: sanityProjectId,
       dataset: sanityDataset,
-      // useCdn: true, // Varsayılan olarak production'da true, dev'de false olur.
+      useCdn: true, // Varsayılan olarak production'da true, dev'de false olur.
                       // Geliştirme için false bırakabilirsiniz: import.meta.env.PROD
       apiVersion: '2023-05-03', // Veya daha güncel bir Sanity API versiyonu (örn: 'v2024-03-14')
       // studioBasePath: '/studio', // Eğer Astro projeniz içinde Sanity Studio'yu da serve ediyorsanız (şu an ayrı bir projeniz var, bu satır gereksiz)
