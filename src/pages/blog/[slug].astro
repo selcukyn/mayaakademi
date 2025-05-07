@@ -37,8 +37,15 @@ export function getStaticPaths() { // async YOK, .then() kullanılıyor
     });
 }
 
-interface Props { slug: string; }
-const { slug } = Astro.props as Props;
+//interface Props { slug: string; }
+//const { slug } = Astro.props as Props;
+const slug = Astro.params.slug;
+
+// Tip kontrolü ekleyelim (opsiyonel ama iyi pratik)
+if (typeof slug !== 'string') {
+  console.error(`[slug].astro: Invalid slug received from params: ${slug}`);
+  return Astro.redirect('/404'); // Geçersiz slug ise 404
+}
 
 const postQuery = `*[_type == "post" && slug.current == $slug][0]{
   _id, title, "slugValue": slug.current, mainImage,
@@ -46,7 +53,8 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0]{
 }`;
 
 // console.log(`Fetching post details for slug: ${slug}`); // Logları temizleyebiliriz
-const post = await sanityClient.fetch<SanityPost | null>(postQuery, { slug }); // TOP-LEVEL AWAIT
+//const post = await sanityClient.fetch<SanityPost | null>(postQuery, { slug }); // TOP-LEVEL AWAIT
+  const post = await sanityClient.fetch<SanityPost | null>(postQuery, { slug });
 
 if (!post) {
   return Astro.redirect('/404');
