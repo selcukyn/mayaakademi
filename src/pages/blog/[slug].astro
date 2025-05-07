@@ -1,55 +1,54 @@
 ---
-// src/pages/blog/[slug].astro
+// src/pages/blog/[slug].astro (NİHAİ ÇALIŞAN KOD)
 
 import Layout from "../../layouts/Layout.astro";
 import { client as sanityClient } from '../../lib/sanityClient';
 import { urlFor } from '../../lib/sanityImageUrl';
 import { Image } from "astro:assets";
-import { PortableText } from 'astro-portabletext';
+import { PortableText } from 'astro-portabletext'; // astro-portabletext paketi
 import { formatDate } from "../../utils/formatDate";
 
-// Paylaşılan tipleri src/types/sanity.ts dosyasından import ediyoruz
 import type {
   SanityPost,
   SanityPostSlug,
-  // SanityImageObjectWithAsset, // SanityPost içinde zaten kullanılıyor
-  PortableTextTypeComponentProps,
+  PortableTextTypeComponentProps, // Sadece image ve link için gerekli tipler
   PortableTextMarkComponentProps
-} from '../../types/sanity'; // <-- DOĞRU IMPORT YOLU
-// SanityImageSource'a customPortableTextComponents içinde doğrudan ihtiyacımız olabilir
+} from '../../types/sanity';
 import type { SanityImageSource } from '../../types/sanity';
 
 
-export async function getStaticPaths(): Promise<Array<{ params: { slug: string }; props: { slug: string } }>> {
+export function getStaticPaths() { // async YOK, .then() kullanılıyor
   const query = `*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))]{ "slug": slug.current }`;
-  const postsFromSanity = await sanityClient.fetch<SanityPostSlug[]>(query);
+  // console.log("Fetching slugs from Sanity using .then()..."); // Logları temizleyebiliriz
 
-  return postsFromSanity.map((post: SanityPostSlug) => ({
-    params: { slug: post.slug },
-    props: { slug: post.slug },
-  }));
+  return sanityClient.fetch<SanityPostSlug[]>(query)
+    .then(postsFromSanity => {
+      // console.log(".then() - Slugs fetched:", postsFromSanity);
+      if (!postsFromSanity || postsFromSanity.length === 0) {
+         return [];
+      }
+      return postsFromSanity.map((post: SanityPostSlug) => {
+        if (!post || !post.slug) { return null; }
+        return { params: { slug: post.slug }, props: { slug: post.slug } };
+      }).filter(Boolean);
+    })
+    .catch(error => {
+      console.error(".then() - Error fetching slugs:", error); return [];
+    });
 }
 
-interface Props {
-  slug: string;
-}
+interface Props { slug: string; }
 const { slug } = Astro.props as Props;
 
 const postQuery = `*[_type == "post" && slug.current == $slug][0]{
-  _id,
-  title,
-  "slugValue": slug.current,
-  mainImage, // Bu SanityImageObjectWithAsset tipine uygun gelmeli
-  author->{ name },
-  publishedAt,
-  body,
-  excerpt
+  _id, title, "slugValue": slug.current, mainImage,
+  author->{ name }, publishedAt, body, excerpt
 }`;
 
-const post = await sanityClient.fetch<SanityPost | null>(postQuery, { slug });
+// console.log(`Fetching post details for slug: ${slug}`); // Logları temizleyebiliriz
+const post = await sanityClient.fetch<SanityPost | null>(postQuery, { slug }); // TOP-LEVEL AWAIT
 
 if (!post) {
-  console.error(`[slug].astro: Post not found for slug "${slug}". Redirecting to 404.`);
   return Astro.redirect('/404');
 }
 
@@ -58,50 +57,58 @@ const metaDescription = post.excerpt || (post.title ? post.title.slice(0, 160) :
 let ogImageUrl: string | undefined = undefined;
 let mainImageForPage: { src: string; alt: string; width: number; height: number } | null = null;
 
-if (post.mainImage) { // mainImage'in varlığını kontrol et (SanityImageObjectWithAsset tipinde)
+if (post.mainImage && post.mainImage.asset) {
   const imgBuilder = urlFor(post.mainImage);
   if (imgBuilder) {
     ogImageUrl = imgBuilder.width(1200).height(630).fit('crop').auto('format').url();
     mainImageForPage = {
       src: imgBuilder.width(1000).height(550).auto('format').url(),
       alt: post.mainImage.alt || pageTitle,
-      width: 1000,
-      height: 550,
+      width: 1000, height: 550
     };
   }
 }
 
+// --- customPortableTextComponents Tanımı (SADECE types.image ve marks.link) ---
+// block, list, listItem tanımları KALDIRILDI. Varsayılan render kullanılacak.
 const customPortableTextComponents: Partial<any> = {
   types: {
+    // Image için string HTML döndürmek çalışmıştı
     image: ({ value }: PortableTextTypeComponentProps) => {
-      if (!value || !value.asset) return null;
-      const imgBuilderType = urlFor(value.asset as SanityImageSource); // value.asset SanityImageSource olmalı
-      if (!imgBuilderType) return null;
+      if (!value || !value.asset) return '';
+      const imgBuilderType = urlFor(value.asset as SanityImageSource);
+      if (!imgBuilderType) return '';
       const imageUrl = imgBuilderType.width(800).auto('format').url();
-      return `<img src="${imageUrl}" alt="${value.alt || 'İçerik görseli'}" class="wow fadeInUp my-6 rounded-[5px] shadow-md" data-wow-delay=".1s" />`;
+      const altText = value.alt || 'İçerik görseli';
+      // Temanızın class'larını ekleyebiliriz
+      return `<img src="${imageUrl}" alt="${altText}" class="my-6 rounded-[5px] shadow-md" />`; // wow fadeInUp kaldırıldı, JS ile eklenmeli veya CSS ile yapılmalı
     },
   },
   marks: {
+    // Link için string HTML döndürmek çalışmıştı
     link: ({ children, value }: PortableTextMarkComponentProps) => {
       const href = value?.href;
+      // children'ı güvenli bir şekilde string'e çeviriyoruz
       const childrenText = Array.isArray(children)
         ? children.map(child => (typeof child === 'string' ? child : (child as any)?.text || '')).join('')
         : String(children || '');
       if (!href) return childrenText;
-      const rel = href.startsWith('/') ? undefined : 'noopener noreferrer';
-      const target = href.startsWith('/') ? undefined : '_blank';
-      return `<a href="${href}" rel="${rel}" target="${target}" class="text-primary hover:underline">${childrenText}</a>`;
+      const rel = href.startsWith('/') ? '' : 'noopener noreferrer';
+      const target = href.startsWith('/') ? '' : '_blank';
+      return `<a href="${href}" ${rel ? `rel="${rel}"` : ''} ${target ? `target="${target}"` : ''} class="text-primary hover:underline">${childrenText}</a>`;
     },
-  },
+  }
 };
+// --- customPortableTextComponents Tanımı SONU ---
+
 ---
 
 <Layout title={pageTitle} description={metaDescription} image={ogImageUrl} type="article">
-  {/* HTML kısmı aynı kalacak, bir önceki cevabımdaki gibi */}
   <section class="pt-20 pb-10 lg:pt-[120px] lg:pb-20 dark:bg-dark">
     <div class="container">
       <div class="-mx-4 flex flex-wrap justify-center">
         <div class="w-full px-4 lg:w-8/12">
+          {/* Ana Görsel */}
           <div class="wow fadeInUp relative z-20 mb-[50px] h-[300px] overflow-hidden rounded-[5px] md:h-[400px] lg:h-[500px]" data-wow-delay=".1s">
             {mainImageForPage ? (
               <Image
@@ -116,6 +123,7 @@ const customPortableTextComponents: Partial<any> = {
                 <span class="text-gray-500">Ana Görsel Yok</span>
               </div>
             )}
+            {/* Görsel Üstü Bilgi */}
             <div class="absolute top-0 left-0 z-10 flex h-full w-full items-end bg-gradient-to-t from-black/70 via-black/30 to-transparent">
               <div class="w-full p-4 pb-4 sm:px-8">
                 <div class="flex flex-wrap items-center justify-between">
@@ -141,18 +149,22 @@ const customPortableTextComponents: Partial<any> = {
             </div>
           </div>
 
+          {/* Yazı Başlığı */}
           <h1 class="wow fadeInUp mb-8 text-2xl font-bold text-dark dark:text-white sm:text-3xl md:text-[35px] md:leading-[1.28]" data-wow-delay=".1s">
             {post.title}
           </h1>
 
+          {/* İçerik Alanı */}
           <div class="-mx-4 flex flex-wrap">
             <div class="w-full px-4">
+              {/* Tailwind Typography class'ları ile varsayılan stilleri sağlıyoruz */}
               <div class="prose dark:prose-invert prose-lg max-w-none mx-auto
                           prose-headings:font-semibold prose-headings:text-dark prose-headings:dark:text-white
                           prose-p:text-body-color prose-p:dark:text-dark-6
                           prose-a:text-primary prose-a:hover:underline
                           prose-strong:text-dark prose-strong:dark:text-white
                           prose-blockquote:border-primary prose-blockquote:text-dark prose-blockquote:dark:text-white">
+                {/* PortableText bileşenini, SADECE image ve link için custom component'lerle çağırıyoruz */}
                 {post.body && post.body.length > 0 && <PortableText value={post.body} components={customPortableTextComponents} />}
               </div>
             </div>
