@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'; // Sanity Studio React kullandığı i
 
 export default defineConfig({
   plugins: [react()],
-  // base: '/admin/', // <-- ÇOK ÖNEMLİ! Studio'nun temel yolunu belirtiyoruz. SONUNDA SLASH OLMALI.
+  base: '/admin/' // <-- ÇOK ÖNEMLİ! Studio'nun temel yolunu belirtiyoruz. SONUNDA SLASH OLMALI.
   // Eğer Sanity'nin kendi Vite plugin'i varsa veya build için özel ayarları varsa,
   // onlar da burada olabilir. Sanity dokümantasyonunda veya mevcut vite.config'inizde
   // Sanity'ye özel bir plugin importu varsa (örn: sanityPlugin()), o da kalmalı.

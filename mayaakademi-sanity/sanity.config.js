@@ -18,7 +18,7 @@ const dataset = 'production';   // Genellikle 'production' olur, kontrol edin.
 export default defineConfig({
   name: 'maya-akademi-studio', // Studio'nuz için bir isim
   title: 'Maya Akademi Sanity Studio', // Studio'nuzun başlığı
-  //basePath: '/admin', // Studio'nun çalışacağı alt dizin yolu
+  basePath: '/admin', // Studio'nun çalışacağı alt dizin yolu
   projectId: projectId,
   dataset: dataset,
 
