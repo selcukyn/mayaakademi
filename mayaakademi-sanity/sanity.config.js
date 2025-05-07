@@ -36,4 +36,7 @@ export default defineConfig({
       blockContent, // blockContent'i de eklemeyi unutmayın
     ],
   },
+
+  basePath: '/admin', // Studio'nun çalışacağı alt dizin yolu
+ 
 });
