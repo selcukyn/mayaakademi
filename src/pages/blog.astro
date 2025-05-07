@@ -1,46 +1,39 @@
 ---
-// src/pages/blog.astro
-// import Pagination from '../components/Pagination.astro'; // Pagination'ı daha sonra güncelleyeceğiz
-import Breadcrumb from '../components/layout/Breadcrumb.astro';
+export const prerender = false; // <-- BU SATIRI EKLEYİN
+// src/pages/blog.astro (Log Eklendi)
+
 import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import Pagination from '../components/Pagination.astro';
+import { client as sanityClient } from '../lib/sanityClient';
+import { urlFor } from '../lib/sanityImageUrl';
+import { Image } from "astro:assets";
 
-import { client as sanityClient } from '../lib/sanityClient'; // Sanity client
-import { urlFor } from '../lib/sanityImageUrl'; // Sanity görsel yardımcısı
-import { Image } from "astro:assets"; // Astro Image bileşeni
-// import config from "../../config/config.json"; // <-- BU SATIRI TAMAMEN KALDIRIYORUZ
-
-const postsPerPage = 6; // Sayfa başına gösterilecek yazı sayısını burada sabit olarak tanımlıyoruz.
-                        // İsterseniz bu değeri değiştirebilirsiniz.
-
-// URL'den mevcut sayfa numarasını al (query parameter: ?page=X)
+const postsPerPage = 6;
 const currentPageFromQuery = Astro.url.searchParams.get('page');
+console.log("Query Param 'page':", currentPageFromQuery); // <-- YENİ LOG: Parametrenin değerini görelim
 const currentPage = parseInt(currentPageFromQuery || "1");
-
+// Eğer ?page yoksa veya geçersizse 1 olacak
+console.log("Calculated currentPage:", currentPage); // <-- YENİ LOG: Hesaplanan sayfa numarasını görelim
 const startIndex = (currentPage - 1) * postsPerPage;
 const endIndex = startIndex + postsPerPage;
 
-// Sanity'den mevcut sayfa için yazıları çek
 const postsQuery = `*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) [$startIndex...$endIndex]{
-  _id,
-  title,
-  "slug": slug.current,
-  mainImage,
-  publishedAt,
-  excerpt
+  _id, title, "slug": slug.current, mainImage{alt, asset}, publishedAt, excerpt
 }`;
 
+console.log(`Fetching posts for page ${currentPage} (startIndex: ${startIndex}, endIndex: ${endIndex})`); // <-- SAYFA VE INDEX LOGU
 const postsFromSanity = await sanityClient.fetch(postsQuery, { startIndex, endIndex });
+console.log(`Fetched ${postsFromSanity?.length || 0} posts for page ${currentPage}:`, postsFromSanity?.map(p => p.title)); // <-- ÇEKİLEN YAZI BAŞLIKLARI LOGU
 
-// Toplam yazı sayısını al (sayfalama için)
 const totalPostsQuery = `count(*[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))])`;
 const totalPostsCount = await sanityClient.fetch(totalPostsQuery);
 const totalPages = Math.ceil(totalPostsCount / postsPerPage);
 
-// Sayfa başlığı için
 const pageTitleBase = "Blog";
 const pageTitle = currentPage > 1 ? `${pageTitleBase} - Sayfa ${currentPage}` : pageTitleBase;
 const metaTitle = `Maya Akademi | ${pageTitle}`;
-const metaDescription = `Bu sayfada Maya Akademi blog yazılarına ulaşabilirsiniz${currentPage > 1 ? `, sayfa ${currentPage}` : ''}.`;
+const metaDescription = `Maya Akademi blog yazıları${currentPage > 1 ? `, sayfa ${currentPage}` : ''}.`;
 ---
 
 <Layout
@@ -48,7 +41,7 @@ const metaDescription = `Bu sayfada Maya Akademi blog yazılarına ulaşabilirsi
   title={metaTitle}
 >
   <Breadcrumb>
-    <Fragment slot="title">Blog</Fragment>
+    <Fragment slot="title">Blog (Sayfa {currentPage})</Fragment> {/* Breadcrumb'a da sayfa no ekleyelim */}
   </Breadcrumb>
   <section class="pt-20 pb-10 lg:pt-[120px] lg:pb-20 dark:bg-dark">
     <div class="container">
@@ -57,57 +50,37 @@ const metaDescription = `Bu sayfada Maya Akademi blog yazılarına ulaşabilirsi
           Blog Yazılarımız
         </p>
         <h1 class="h2 text-dark dark:text-white">
-          En Son Haberler ve İçgörüler
+          En Son Haberler ve İçgörüler (Sayfa {currentPage}) {/* Başlığa sayfa no ekleyelim */}
         </h1>
       </div>
-      {postsFromSanity.length > 0 ? (
+      {postsFromSanity && postsFromSanity.length > 0 ? ( // postsFromSanity null kontrolü eklendi
         <ul class="-mx-4 flex flex-wrap">
-          {
-            postsFromSanity.map((post) => {
+          {postsFromSanity.map((post) => {
               let imageUrl: string | null = null;
-              let imageAlt: string = post.title || "Blog görseli";
-              if (post.mainImage && post.mainImage.asset) {
-                imageUrl = urlFor(post.mainImage)?.width(700).height(450).auto('format').url() || null;
-                if (post.mainImage.alt) {
-                  imageAlt = post.mainImage.alt;
+              let imageAlt: string = (post?.mainImage && post.mainImage.alt) || post?.title || "Blog görseli"; // post null kontrolü
+              if (post?.mainImage && post.mainImage.asset) { // post null kontrolü
+                const imgBuilder = urlFor(post.mainImage);
+                if (imgBuilder) {
+                  imageUrl = imgBuilder.width(700).height(450).auto('format').url();
                 }
               }
 
               return (
                 <li class="w-full px-4 md:w-1/2 lg:w-1/3">
-                  <a class="wow fadeInUp group block mb-10" data-wow-delay=".1s" href={`/blog/${post.slug}`}>
+                  <a class="wow fadeInUp group block mb-10" data-wow-delay=".1s" href={`/blog/${post?.slug}`}> {/* post null kontrolü */}
                     <div class="mb-8 overflow-hidden rounded-[5px]">
-                      {imageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={imageAlt}
-                          width={700}
-                          height={450}
-                          format="webp"
-                          quality={80}
-                          class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div class="w-full h-[200px] bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-[5px]">
-                          <span class="text-gray-500">Görsel Yok</span>
-                        </div>
-                      )}
+                      {imageUrl ? ( <Image src={imageUrl} alt={imageAlt} width={700} height={450} format="webp" quality={80} class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125" loading="lazy" /> ) : ( <div class="flex h-[200px] w-full items-center justify-center rounded-[5px] bg-gray-200 dark:bg-gray-700"><span class="text-gray-500">Görsel Yok</span></div> )}
                     </div>
                     <div>
-                      <span
-                        class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary"
-                      >
-                        {new Date(post.publishedAt).toLocaleDateString("tr-TR", {day: '2-digit', month: 'long', year: 'numeric'})}
+                      <span class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary">
+                        {post?.publishedAt ? new Date(post.publishedAt).toLocaleDateString("tr-TR", {day: '2-digit', month: 'long', year: 'numeric'}) : ''} {/* post null kontrolü */}
                       </span>
                       <h3>
-                        <span
-                          class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl"
-                        >
-                          {post.title}
+                        <span class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl">
+                          {post?.title} {/* post null kontrolü */}
                         </span>
                       </h3>
-                      {post.excerpt && (
+                      {post?.excerpt && ( // post null kontrolü
                         <p class="max-w-[370px] text-base text-body-color dark:text-dark-6">
                           {post.excerpt.slice(0, 120)}{post.excerpt.length > 120 ? '...' : ''}
                         </p>
@@ -116,14 +89,19 @@ const metaDescription = `Bu sayfada Maya Akademi blog yazılarına ulaşabilirsi
                   </a>
                 </li>
               );
-            })
-          }
+            })}
         </ul>
       ) : (
         currentPage === 1 && <p class="mt-10 text-center text-lg text-gray-600 dark:text-gray-400">Henüz hiç yazı yayınlanmamış.</p>
       )}
 
-      {/* <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" /> */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          basePath="/blog"
+        />
+      )}
     </div>
   </section>
 </Layout>

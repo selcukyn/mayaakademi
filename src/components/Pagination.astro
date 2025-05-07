@@ -1,6 +1,6 @@
 ---
 // src/components/Pagination.astro (range fonksiyonunu kullanan ve query parametreli)
-import { range } from "../utils/range"; // <-- Oluşturduğunuz range.ts dosyasını import ediyoruz
+import { range } from "../utils/range"; // <-- Bu dosya artık var
 
 export interface Props {
   currentPage: number;
@@ -10,36 +10,30 @@ export interface Props {
 
 const { currentPage, totalPages, basePath } = Astro.props;
 
-const pageNumbersToDisplay = range(1, totalPages); // range fonksiyonunu kullanarak [1, 2, ..., totalPages] dizisini oluşturuyoruz
+// Sayfa numarası dizisini oluştur
+const pageNumbersToDisplay = range(1, totalPages);
 
-// Çok fazla sayfa varsa gösterilecek sayfa aralığını sınırlama mantığı (Opsiyonel İyileştirme)
-const maxPagesToShow = 5; // Ortada gösterilecek maksimum sayfa sayısı (Örn: 1 ... 4 5 6 ... 10)
+// Çok fazla sayfa varsa gösterilecek sayfa aralığını sınırlama mantığı (Opsiyonel)
+const maxPagesToShow = 5;
 let startPage: number, endPage: number;
 if (totalPages <= maxPagesToShow) {
-  // Toplam sayfa sayısı max'tan az veya eşitse hepsini göster
   startPage = 1;
   endPage = totalPages;
 } else {
-  // Ortadaki sayfaları hesapla
   const maxPagesBeforeCurrent = Math.floor((maxPagesToShow - 1) / 2);
   const maxPagesAfterCurrent = Math.ceil((maxPagesToShow - 1) / 2);
   if (currentPage <= maxPagesBeforeCurrent) {
-    // Başa yakınsa: 1, 2, 3, 4, 5 ...
     startPage = 1;
     endPage = maxPagesToShow;
   } else if (currentPage + maxPagesAfterCurrent >= totalPages) {
-    // Sona yakınsa: ... 6, 7, 8, 9, 10
     startPage = totalPages - maxPagesToShow + 1;
     endPage = totalPages;
   } else {
-    // Ortadaysa: ... 3, 4, 5, 6, 7 ...
     startPage = currentPage - maxPagesBeforeCurrent;
     endPage = currentPage + maxPagesAfterCurrent;
   }
 }
-// Sınırlı sayfa numarası dizisi (eğer yukarıdaki mantığı kullanırsanız)
 const limitedPageNumbers = range(startPage, endPage);
-// Eğer tüm sayfaları göstermek isterseniz: const limitedPageNumbers = pageNumbersToDisplay;
 
 const hasPrev = currentPage > 1;
 const hasNext = currentPage < totalPages;
@@ -64,9 +58,20 @@ const hasNext = currentPage < totalPages;
             <svg class="h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/> </svg>
           </a>
         </li>
-
-        {/* Sayfa Numarası Linkleri (Sınırlı veya Tamamı) */}
-        {/* Eğer sınırlı gösterme mantığını kullanıyorsanız limitedPageNumbers, yoksa pageNumbersToDisplay */}
+        {/* ... Kısaltma Mantığı (Opsiyonel): Eğer ilk sayfa gösterilen aralıkta değilse "1 ..." ekle */}
+        { startPage > 1 && (
+          <>
+            <li>
+              <a href={`${basePath}`} class="border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">1</a>
+            </li>
+            { startPage > 2 && (
+              <li>
+                <span class="border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">...</span>
+              </li>
+            )}
+          </>
+        )}
+        {/* Gösterilecek Sayfa Numarası Linkleri */}
         {limitedPageNumbers.map((page) => (
           <li>
             <a
@@ -84,7 +89,19 @@ const hasNext = currentPage < totalPages;
             </a>
           </li>
         ))}
-
+        {/* ... Kısaltma Mantığı (Opsiyonel): Eğer son sayfa gösterilen aralıkta değilse "... N" ekle */}
+        { endPage < totalPages && (
+          <>
+            { endPage < totalPages - 1 && (
+              <li>
+                <span class="border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">...</span>
+              </li>
+            )}
+            <li>
+              <a href={`${basePath}?page=${totalPages}`} class="border border-gray-300 bg-white px-3 py-2 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">{totalPages}</a>
+            </li>
+          </>
+        )}
         {/* Sonraki Sayfa Linki */}
         <li>
           <a

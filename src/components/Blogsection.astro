@@ -1,72 +1,128 @@
 ---
-import { getCollection } from "astro:content";
+// src/components/Blogsection.astro (Sanity ile Güncellenmiş)
 
-// Filter blog entries with 'draft: false' & date before current date
-const publishedBlogEntries = await getCollection("blog", ({ data }) => {
-  return !data.draft && data.publishDate < new Date();
-});
+// Gerekli importlar
+import { client as sanityClient } from '../lib/sanityClient'; // Sanity client
+import { urlFor } from '../lib/sanityImageUrl';             // Görsel yardımcısı
+import { Image } from "astro:assets";                       // Astro Image
+// import { getCollection } from "astro:content";           // <-- KALDIRILDI
 
-// Sort content entries by publication date
-publishedBlogEntries.sort(function (a, b) {
-  return b.data.publishDate.valueOf() - a.data.publishDate.valueOf();
-});
+// Ana sayfada gösterilecek yazı sayısı
+const numberOfRecentPosts = 3;
+
+// Sanity'den en son yazıları çek
+const recentPostsQuery = `
+  *[_type == "post" && defined(slug.current) && !(_id in path("drafts.**"))]
+  | order(publishedAt desc) [0...$limit] {
+    _id,
+    title,
+    "slug": slug.current, // slug'ı alıyoruz
+    mainImage{alt, asset}, // mainImage ve alt alanını alıyoruz
+    publishedAt,
+    excerpt // Eski postDetails.paraOne yerine excerpt'ı kullanacağız
+  }`;
+
+const latestPosts = await sanityClient.fetch(recentPostsQuery, { limit: numberOfRecentPosts });
+
+// ESKİ KODU KALDIRDIK
+// const publishedBlogEntries = await getCollection("blog", ({ data }) => { ... });
+// publishedBlogEntries.sort(function (a, b) { ... });
 ---
 
-<section class="pt-20 pb-10 lg:pt-[120px] lg:pb-20 bg-white dark:bg-dark">
-  <div class="container">
-    <div class="flex flex-wrap justify-center -mx-4">
-      <div class="w-full px-4">
-        <div class="mx-auto mb-[60px] max-w-[485px] text-center">
-          <span class="block mb-2 text-lg font-semibold text-primary">
-            BLOG
-          </span>
-          <h2 class="mb-4 text-3xl font-bold text-dark dark:text-white sm:text-4xl md:text-[40px] md:leading-[1.2]">
-            Bizden Haberler
-          </h2>
-          <p class="text-base text-body-color dark:text-dark-6">
-            There are many variations of passages of Lorem Ipsum available
-            but the majority have suffered alteration in some form.
-          </p>
+{/* Sadece Sanity'den yazı geldiyse bu bölümü göster */}
+{latestPosts && latestPosts.length > 0 && (
+  <section class="pt-20 pb-10 lg:pt-[120px] lg:pb-20 bg-white dark:bg-dark"> {/* ID'yi kaldırdım, isterseniz ekleyebilirsiniz */}
+    <div class="container">
+      {/* Bölüm Başlığı (Mevcut kodunuzdaki gibi) */}
+      <div class="flex flex-wrap justify-center -mx-4">
+        <div class="w-full px-4">
+          <div class="mx-auto mb-[60px] max-w-[485px] text-center">
+            <span class="block mb-2 text-lg font-semibold text-primary">
+              BLOG
+            </span>
+            <h2 class="mb-4 text-3xl font-bold text-dark dark:text-white sm:text-4xl md:text-[40px] md:leading-[1.2]">
+              Bizden Haberler
+            </h2>
+            {/* Açıklamayı isterseniz güncelleyebilirsiniz */}
+            <p class="text-base text-body-color dark:text-dark-6">
+              Sektördeki gelişmeler, eğitimler ve teknoloji dünyasından en son yazılarımız.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <ul class="-mx-4 flex flex-wrap">
-      {
-        publishedBlogEntries.slice(0, 3).map((blogPostEntry, index) => (
-          <li class="w-full px-4 md:w-1/2 lg:w-1/3">
-            <a class="wow fadeInUp group block mb-10" data-wow-delay=".1s" href={`/blog/${blogPostEntry.slug}`}>
-              <div class="mb-8 overflow-hidden rounded-[5px]">
-                <span class="block">
-                  <img
-                    src={blogPostEntry.data.image.src}
-                    alt={blogPostEntry.data.image.alt}
-                    class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125"
-                  />
-                </span>
-              </div>
-              <div>
-                <span
-                  class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary"
-                >
-                {blogPostEntry.data.publishDate.toLocaleDateString("tr-TR")}&nbsp
-                {blogPostEntry.data.publishDate.toLocaleDateString("tr-TR", { weekday: 'long' })}
-                </span>
-                <h3>
-                  <span
-                    class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl"
-                  >
-                    {blogPostEntry.data.title}
-                  </span>
-                </h3>
-                <p class="max-w-[370px] text-base text-body-color dark:text-dark-6">
-                  {blogPostEntry.data.postDetails.paraOne.slice(0, 100)}
-                </p>
-              </div>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
-</section>
+      {/* Blog Yazıları Listesi (Sanity verisiyle) */}
+      <ul class="-mx-4 flex flex-wrap">
+        {latestPosts.map((post, index) => { // 'post' ve 'index' kullanıyoruz
+            // Görsel bilgilerini hazırlama
+            let imageUrl: string | null = null;
+            let imageAlt: string = (post.mainImage && post.mainImage.alt) || post.title || "Blog görseli";
+            if (post.mainImage && post.mainImage.asset) {
+              const imgBuilder = urlFor(post.mainImage);
+              if (imgBuilder) {
+                // Ana sayfadaki kartlar için aynı veya farklı boyut kullanabilirsiniz
+                imageUrl = imgBuilder.width(700).height(450).auto('format').url();
+              }
+            }
+            // WOW animasyon gecikmesi için index kullanılabilir
+            const wowDelay = `.${index + 1}s`; // .1s, .2s, .3s gibi
+
+            return (
+              <li class="w-full px-4 md:w-1/2 lg:w-1/3">
+                {/* Link artık Sanity'den gelen post.slug'ı kullanıyor */}
+                <a class="wow fadeInUp group block mb-10" data-wow-delay={wowDelay} href={`/blog/${post.slug}`}>
+                  <div class="mb-8 overflow-hidden rounded-[5px]">
+                    <span class="block">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={imageAlt}
+                          width={700} height={450} format="webp" quality={80}
+                          class="w-full ease-in duration-300 group-hover:rotate-6 group-hover:scale-125"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div class="flex h-[200px] w-full items-center justify-center rounded-[5px] bg-gray-200 dark:bg-gray-700">
+                          <span class="text-gray-500">Görsel Yok</span>
+                        </div>
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    <span
+                      class="inline-block px-4 py-0.5 mb-6 text-xs font-medium leading-loose text-center text-white rounded-[5px] bg-primary"
+                    >
+                      {/* Tarih Sanity'den gelen post.publishedAt kullanılarak formatlanıyor */}
+                      {new Date(post.publishedAt).toLocaleDateString("tr-TR", {day: '2-digit', month: 'long', year: 'numeric'})}
+                      {/* Gün adını isterseniz ekleyebilirsiniz: */}
+                      {/*  {new Date(post.publishedAt).toLocaleDateString("tr-TR", { weekday: 'long' })} */}
+                    </span>
+                    <h3>
+                      <span
+                        class="inline-block mb-4 text-xl font-semibold text-dark dark:text-white hover:text-primary dark:hover:text-primary sm:text-2xl lg:text-xl xl:text-2xl"
+                      >
+                        {/* Başlık Sanity'den geliyor */}
+                        {post.title}
+                      </span>
+                    </h3>
+                    {/* Açıklama için Sanity'den gelen post.excerpt kullanılıyor */}
+                    {post.excerpt && (
+                      <p class="max-w-[370px] text-base text-body-color dark:text-dark-6">
+                        {post.excerpt.slice(0, 100)}{post.excerpt.length > 100 ? '...' : ''}
+                      </p>
+                    )}
+                  </div>
+                </a>
+              </li>
+            );
+          })}
+      </ul>
+       {/* İsteğe bağlı: Tüm blog yazılarına link */}
+       <div class="wow fadeInUp text-center" data-wow-delay=".2s">
+          <a href="/blog" class="inline-flex items-center justify-center rounded-md border border-primary py-3 px-7 text-center text-base font-medium text-primary hover:border-primary hover:bg-primary hover:text-white">
+            Tüm Yazıları Gör
+          </a>
+        </div>
+    </div>
+  </section>
+)}
