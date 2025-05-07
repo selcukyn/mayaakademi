@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro start",
-    "build:studio": "cd mayaakademi-sanity && sanity",
     "build:astro": "astro build",
     "build": "npm run build:astro",
     "preview": "astro preview",

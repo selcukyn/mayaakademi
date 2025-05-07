@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/test-yonlendirme",
-      "destination": "https://wwww.example.com" 
-    },
-    {
       "source": "/admin",
       "destination": "https://mayaakademi-admin.vercel.app"
     },
