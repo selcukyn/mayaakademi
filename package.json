@@ -9,7 +9,7 @@
     "build:astro": "astro build",
     "build": "npm run build:astro",
     "preview": "astro preview",
-    "astro": "astro" // CLI for Astro
+    "astro": "astro" 
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.3.1",

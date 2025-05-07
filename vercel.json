@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/test-yonlendirme",
-      "destination": "https://example.com"  // ornek yönlendirme
+      "destination": "https://example.com" 
     },
     {
       "source": "/admin",
