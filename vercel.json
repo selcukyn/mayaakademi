@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+      {
+        "source": "/admin",
+        "destination": "https://mayaakademi-admin.vercel.app" 
+      },
+      {
+        "source": "/admin/:match*",
+        "destination": "https://mayaakademi-admin.vercel.app/:match*" 
+      }
+    ]
+  }
