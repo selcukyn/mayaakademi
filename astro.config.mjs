@@ -13,7 +13,7 @@ const sanityDataset = 'production'; // Genellikle 'production', Sanity projenizd
 
 export default defineConfig({
   site: "https://mayaakademi.com.tr/", // Sitenizin URL'si
-  output: "hybrid",
+  output: "server",
   adapter: vercel(), 
 
   siteMetadata: {
