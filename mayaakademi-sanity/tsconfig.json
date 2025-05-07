@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+      "target": "ESNext",
+      "useDefineForClassFields": true,
+      "lib": ["DOM", "DOM.Iterable", "ESNext"],
+      "allowJs": false,
+      "skipLibCheck": true,
+      "esModuleInterop": true, // Bu zaten Astro projesinin tsconfig'inde de vardı
+      "allowSyntheticDefaultImports": true,
+      "strict": true,
+      "forceConsistentCasingInFileNames": true,
+      "module": "ESNext",
+      "moduleResolution": "Node", // veya "Bundler" (daha modern)
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "noEmit": true,
+      "jsx": "react-jsx" // JSX'in nasıl işleneceği
+    },
+    "include": ["src", "vite.config.ts", "sanity.config.ts"], // veya .js uzantılılarsa onlar
+  }
