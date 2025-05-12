@@ -7,3 +7,7 @@
     color: #1e40af !important; /* Tailwind: hover:text-blue-900 */
   }
   
+  body {
+    background: pink !important;
+  }
+  
