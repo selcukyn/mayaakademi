@@ -8,9 +8,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.pageYOffset > sticky) {
       ud_header.classList.add('sticky-header');
       ud_header.classList.remove('absolute', 'bg-transparent', 'z-40');
+      ud_header.classList.add('bg-white', 'text-blue-800');
+      ud_header.classList.remove('text-white');
     } else {
       ud_header.classList.remove('sticky-header');
       ud_header.classList.add('absolute', 'bg-transparent', 'z-40');
+      ud_header.classList.remove('bg-white', 'text-blue-800');
+      ud_header.classList.add('text-white');
     }
 
     if(logo.length) {
