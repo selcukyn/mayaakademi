@@ -1,0 +1,9 @@
+/* Sticky header aktifken menü linklerinin rengi */
+.sticky-header .ud-menu-scroll {
+    color: #1e3a8a !important; /* Tailwind: text-blue-800 */
+  }
+  
+  .sticky-header .ud-menu-scroll:hover {
+    color: #1e40af !important; /* Tailwind: hover:text-blue-900 */
+  }
+  
